@@ -1,5 +1,5 @@
-import * as I from '../data/interface';
-import * as D from '@pkmn/dex';
+import type * as I from '../data/interface';
+import type * as D from '@pkmn/dex';
 
 export function toID(s: string) {
   return ('' + s).toLowerCase().replace(/[^a-z0-9]+/g, '') as I.ID;
@@ -108,7 +108,7 @@ class Item implements I.Item {
   readonly kind: 'Item';
   readonly id: I.ID;
   readonly name: I.ItemName;
-  readonly megaEvolves?: I.SpeciesName;
+  readonly megaStone?: Readonly<{[megaEvolves: I.SpeciesName]: I.SpeciesName}>;
   readonly isBerry?: boolean;
   readonly naturalGift?: Readonly<{basePower: number; type: I.TypeName}>;
 
@@ -116,7 +116,7 @@ class Item implements I.Item {
     this.kind = 'Item';
     this.id = item.id as I.ID;
     this.name = item.name as I.ItemName;
-    this.megaEvolves = item.megaEvolves as I.SpeciesName;
+    this.megaStone = item.megaStone;
     this.isBerry = item.isBerry;
     this.naturalGift = item.naturalGift && {
       basePower: item.naturalGift.basePower - (gen === 2 ? 20 : 0),
@@ -179,6 +179,7 @@ class Move implements I.Move {
     basePower: number;
   };
   readonly multihit?: number | number[];
+  readonly multiaccuracy?: boolean;
 
   constructor(move: D.Move, dex: D.ModdedDex) {
     this.kind = 'Move';
@@ -206,6 +207,7 @@ class Move implements I.Move {
     }
 
     if (move.multihit) this.multihit = move.multihit;
+    if (move.multiaccuracy) this.multiaccuracy = move.multiaccuracy;
     if (move.drain) this.drain = move.drain;
     if (move.willCrit) this.willCrit = move.willCrit;
     if (move.priority > 0) this.priority = move.priority;
@@ -244,6 +246,10 @@ class Move implements I.Move {
     if (dex.gen >= 8) {
       if (move.isMax) this.isMax = true;
       if (move.maxMove) this.maxMove = {basePower: move.maxMove.basePower};
+    }
+    if (dex.gen >= 9) {
+      if (move.flags.wind) this.flags.wind = move.flags.wind;
+      if (move.flags.slicing) this.flags.slicing = move.flags.slicing;
     }
   }
 }
@@ -295,11 +301,11 @@ class Specie implements I.Specie {
   readonly types: [I.TypeName] | [I.TypeName, I.TypeName];
   readonly baseStats: Readonly<I.StatsTable>;
   readonly weightkg: number;
-  readonly nfe?: boolean;
   readonly gender?: I.GenderName;
+  readonly nfe?: boolean;
+  readonly abilities?: {0: I.AbilityName};
   readonly otherFormes?: I.SpeciesName[];
   readonly baseSpecies?: I.SpeciesName;
-  readonly abilities?: {0: I.AbilityName};
 
   constructor(species: D.Species, dex: D.ModdedDex) {
     this.kind = 'Species';
@@ -309,11 +315,12 @@ class Specie implements I.Specie {
     this.baseStats = species.baseStats;
     this.weightkg = species.weightkg;
 
-    const nfe = !!species.evos?.some(s => exists(dex.species.get(s), dex.gen));
+    if (species.gender && dex.gen > 1) this.gender = species.gender;
+    const nfe = !!species.evos?.some((s: string) => exists(dex.species.get(s), dex.gen));
     if (nfe) this.nfe = nfe;
-    if (species.gender === 'N' && dex.gen > 1) this.gender = species.gender;
+    if (dex.gen > 2) this.abilities = {0: species.abilities[0] as I.AbilityName};
 
-    const formes = species.otherFormes?.filter(s => exists(dex.species.get(s), dex.gen));
+    const formes = species.otherFormes?.filter((s: string) => exists(dex.species.get(s), dex.gen));
     if (species.id.startsWith('aegislash')) {
       if (species.id === 'aegislashblade') {
         this.otherFormes = ['Aegislash-Shield', 'Aegislash-Both'] as I.SpeciesName[];
@@ -344,8 +351,6 @@ class Specie implements I.Specie {
       const gmax = dex.species.get(`${species.name}-Gmax`);
       if (exists(gmax, dex.gen)) this.otherFormes = [...formes, gmax.name].sort();
     }
-
-    if (dex.gen > 2) this.abilities = {0: species.abilities[0] as I.AbilityName};
   }
 }
 
@@ -484,14 +489,25 @@ const NATDEX_BANNED = [
   'Pikachu-Libre',
   'Pichu-Spiky-eared',
   'Floette-Eternal',
-  'Magearna-Original',
 ];
 
-function exists(val: D.Ability| D.Item | D.Move | D.Species | D.Type, gen: I.GenerationNum) {
+function exists(val: D.Ability | D.Item | D.Move | D.Species | D.Type, gen: I.GenerationNum) {
   if (!val.exists || val.id === 'noability') return false;
+  if (val.kind === 'Species' && val.isCosmeticForme) return false;
   if (gen === 7 && val.isNonstandard === 'LGPE') return true;
-  if (gen === 8 && val.isNonstandard === 'Past' && !NATDEX_BANNED.includes(val.name)) return true;
-  if (gen === 8 && ['eternatuseternamax', 'zarude', 'zarudedada'].includes(val.id)) return true;
+  if (gen >= 8) {
+    if (gen === 8) {
+      if (('isMax' in val && val.isMax) || val.isNonstandard === 'Gigantamax') return true;
+      if (['eternatuseternamax', 'zarude', 'zarudedada'].includes(val.id)) return true;
+      if (val.isNonstandard === 'Future') return false;
+    }
+    if (val.isNonstandard === 'Past' && !NATDEX_BANNED.includes(val.name)) return true;
+    if (gen > 8 && 'isZ' in val && val.isZ) return false;
+    if (gen > 8 && val.isNonstandard === 'Unobtainable') return true;
+    if (gen > 8 && val.isNonstandard === 'Future') return true;
+    if (gen > 8 && ['ramnarokradiant'].includes(val.id)) return true;
+  }
+  if (gen >= 6 && ['floetteeternal'].includes(val.id)) return true;
   // TODO: clean this up with proper Gigantamax support
   if (val.isNonstandard && !['CAP', 'Unobtainable', 'Gigantamax'].includes(val.isNonstandard)) {
     return false;

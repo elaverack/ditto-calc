@@ -1,25 +1,27 @@
 import {Field} from './field';
-import {Generation} from './data/interface';
-import {Move} from './move';
-import {Pokemon} from './pokemon';
-import {Result} from './result';
+import type {Generation} from './data/interface';
+import type {Move} from './move';
+import type {Pokemon} from './pokemon';
+import type {Result} from './result';
 
+import {calculateChampions} from './mechanics/champions';
 import {calculateRBYGSC} from './mechanics/gen12';
 import {calculateADV} from './mechanics/gen3';
 import {calculateDPP} from './mechanics/gen4';
 import {calculateBWXY} from './mechanics/gen56';
-import {calculateSMSS} from './mechanics/gen78';
+import {calculateSMSSSV} from './mechanics/gen789';
 
 const MECHANICS = [
-  () => {},
+  calculateChampions,
   calculateRBYGSC,
   calculateRBYGSC,
   calculateADV,
   calculateDPP,
   calculateBWXY,
   calculateBWXY,
-  calculateSMSS,
-  calculateSMSS,
+  calculateSMSSSV,
+  calculateSMSSSV,
+  calculateSMSSSV,
 ];
 
 export function calculate(
@@ -35,5 +37,5 @@ export function calculate(
     defender.clone(),
     move.clone(),
     field ? field.clone() : new Field()
-  ) as Result;
+  );
 }

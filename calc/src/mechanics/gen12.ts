@@ -1,9 +1,9 @@
-import {Generation} from '../data/interface';
+import type {Generation} from '../data/interface';
 import {getItemBoostType} from '../items';
-import {RawDesc} from '../desc';
-import {Field} from '../field';
-import {Move} from '../move';
-import {Pokemon} from '../pokemon';
+import type {RawDesc} from '../desc';
+import type {Field} from '../field';
+import type {Move} from '../move';
+import type {Pokemon} from '../pokemon';
 import {Result} from '../result';
 import {computeFinalStats, getMoveEffectiveness, handleFixedDamageMoves} from './util';
 
@@ -33,6 +33,13 @@ export function calculateRBYGSC(
     return result;
   }
 
+  if (move.name === 'Pain Split') {
+    const average = Math.floor((attacker.curHP() + defender.curHP()) / 2);
+    const damage = Math.max(0, defender.curHP() - average);
+    result.damage = damage;
+    return result;
+  }
+
   // Fixed damage moves (eg. Night Shade) ignore type effectiveness in Gen 1
   if (gen.num === 1) {
     const fixedDamage = handleFixedDamageMoves(attacker, move);
@@ -42,10 +49,42 @@ export function calculateRBYGSC(
     }
   }
 
+  const typeEffectivenessPrecedenceRules = [
+    'Normal',
+    'Fire',
+    'Water',
+    'Electric',
+    'Grass',
+    'Ice',
+    'Fighting',
+    'Poison',
+    'Ground',
+    'Flying',
+    'Psychic',
+    'Bug',
+    'Rock',
+    'Ghost',
+    'Dragon',
+    'Dark',
+    'Steel',
+  ];
+
+  let firstDefenderType = defender.types[0];
+  let secondDefenderType = defender.types[1];
+
+  if (secondDefenderType && firstDefenderType !== secondDefenderType && gen.num === 2) {
+    const firstTypePrecedence = typeEffectivenessPrecedenceRules.indexOf(firstDefenderType);
+    const secondTypePrecedence = typeEffectivenessPrecedenceRules.indexOf(secondDefenderType);
+
+    if (firstTypePrecedence > secondTypePrecedence) {
+      [firstDefenderType, secondDefenderType] = [secondDefenderType, firstDefenderType];
+    }
+  }
+
   const type1Effectiveness =
-    getMoveEffectiveness(gen, move, defender.types[0], field.defenderSide.isForesight);
-  const type2Effectiveness = defender.types[1]
-    ? getMoveEffectiveness(gen, move, defender.types[1], field.defenderSide.isForesight)
+    getMoveEffectiveness(gen, move, firstDefenderType, field.defenderSide.isForesight);
+  const type2Effectiveness = secondDefenderType
+    ? getMoveEffectiveness(gen, move, secondDefenderType, field.defenderSide.isForesight)
     : 1;
   const typeEffectiveness = type1Effectiveness * type2Effectiveness;
 
@@ -63,6 +102,11 @@ export function calculateRBYGSC(
 
   if (move.hits > 1) {
     desc.hits = move.hits;
+  }
+  // Triple Kick's damage increases by 10 after each consecutive hit (10, 20, 30), this is a hack
+  if (move.name === 'Triple Kick') {
+    move.bp = move.hits === 2 ? 15 : move.hits === 3 ? 20 : 10;
+    desc.moveBP = move.bp;
   }
 
   // Flail and Reversal are variable BP and never crit
@@ -169,7 +213,7 @@ export function calculateRBYGSC(
     desc.isSwitching = 'out';
   }
 
-  // In Gen 2 and no other gens, Dragon Fang in a no-op and Dragon Scale erroneously has its effect
+  // In Gen 2 and no other gens, Dragon Fang is a no-op and Dragon Scale erroneously has its effect
   const itemBoostType =
     attacker.hasItem('Dragon Fang')
       ? undefined
@@ -198,7 +242,12 @@ export function calculateRBYGSC(
     baseDamage = Math.floor(baseDamage * 1.5);
   }
 
-  baseDamage = Math.floor(baseDamage * typeEffectiveness);
+  if (gen.num === 1) {
+    baseDamage = Math.floor(baseDamage * type1Effectiveness);
+    baseDamage = Math.floor(baseDamage * type2Effectiveness);
+  } else {
+    baseDamage = Math.floor(baseDamage * typeEffectiveness);
+  }
 
   // Flail and Reversal don't use random factor
   if (move.named('Flail', 'Reversal')) {
@@ -206,9 +255,42 @@ export function calculateRBYGSC(
     return result;
   }
 
-  result.damage = [];
+  const damage = [];
   for (let i = 217; i <= 255; i++) {
-    result.damage[i - 217] = Math.floor((baseDamage * i) / 255);
+    if (gen.num === 2) { // in gen 2 damage is always rounded up to 1. TODO ADD TESTS
+      damage[i - 217] = Math.max(1, Math.floor((baseDamage * i) / 255));
+    } else {
+      if (baseDamage === 1) { // in gen 1 the random factor multiplication is skipped if damage = 1
+        damage[i - 217] = 1;
+      } else {
+        damage[i - 217] = Math.floor((baseDamage * i) / 255);
+      }
+    }
+  }
+  result.damage = damage;
+
+  if (move.hits > 1) {
+    const damageMatrix = [damage];
+    for (let times = 1; times < move.hits; times++) {
+      const damage = [];
+      for (let damageMultiplier = 217; damageMultiplier <= 255; damageMultiplier++) {
+        let newFinalDamage = 0;
+        // in gen 2 damage is always rounded up to 1. TODO ADD TESTS
+        if (gen.num === 2) {
+          newFinalDamage = Math.max(1, Math.floor((baseDamage * damageMultiplier) / 255));
+        } else {
+          // in gen 1 the random factor multiplication is skipped if damage = 1
+          if (baseDamage === 1) {
+            newFinalDamage = 1;
+          } else {
+            newFinalDamage = Math.floor((baseDamage * damageMultiplier) / 255);
+          }
+        }
+        damage[damageMultiplier - 217] = newFinalDamage;
+      }
+      damageMatrix[times] = damage;
+    }
+    result.damage = damageMatrix;
   }
 
   return result;

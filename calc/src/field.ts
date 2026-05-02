@@ -1,5 +1,5 @@
-import {State} from './state';
-import {GameType, Weather, Terrain} from './data/interface';
+import type {State} from './state';
+import type {GameType, Weather, Terrain} from './data/interface';
 
 export class Field implements State.Field {
   gameType: GameType;
@@ -11,6 +11,10 @@ export class Field implements State.Field {
   isAuraBreak?: boolean;
   isFairyAura?: boolean;
   isDarkAura?: boolean;
+  isBeadsOfRuin?: boolean;
+  isSwordOfRuin?: boolean;
+  isTabletsOfRuin?: boolean;
+  isVesselOfRuin?: boolean;
   attackerSide: Side;
   defenderSide: Side;
 
@@ -24,6 +28,10 @@ export class Field implements State.Field {
     this.isAuraBreak = field.isAuraBreak || false;
     this.isFairyAura = field.isFairyAura || false;
     this.isDarkAura = field.isDarkAura || false;
+    this.isBeadsOfRuin = field.isBeadsOfRuin || false;
+    this.isSwordOfRuin = field.isSwordOfRuin || false;
+    this.isTabletsOfRuin = field.isTabletsOfRuin || false;
+    this.isVesselOfRuin = field.isVesselOfRuin || false;
 
     this.attackerSide = new Side(field.attackerSide || {});
     this.defenderSide = new Side(field.defenderSide || {});
@@ -55,6 +63,10 @@ export class Field implements State.Field {
       isAuraBreak: this.isAuraBreak,
       isDarkAura: this.isDarkAura,
       isFairyAura: this.isFairyAura,
+      isBeadsOfRuin: this.isBeadsOfRuin,
+      isSwordOfRuin: this.isSwordOfRuin,
+      isTabletsOfRuin: this.isTabletsOfRuin,
+      isVesselOfRuin: this.isVesselOfRuin,
     });
   }
 }
@@ -71,13 +83,17 @@ export class Side implements State.Side {
   isLightScreen: boolean;
   isProtected: boolean;
   isSeeded: boolean;
+  isSaltCured: boolean;
   isForesight: boolean;
   isTailwind: boolean;
   isHelpingHand: boolean;
+  isFlowerGift: boolean;
+  isPowerTrick?: boolean;
   isFriendGuard: boolean;
   isAuroraVeil: boolean;
   isBattery: boolean;
   isPowerSpot: boolean;
+  isSteelySpirit: boolean;
   isSwitching?: 'out' | 'in';
 
   constructor(side: State.Side = {}) {
@@ -92,13 +108,17 @@ export class Side implements State.Side {
     this.isLightScreen = !!side.isLightScreen;
     this.isProtected = !!side.isProtected;
     this.isSeeded = !!side.isSeeded;
+    this.isSaltCured = !!side.isSaltCured;
     this.isForesight = !!side.isForesight;
     this.isTailwind = !!side.isTailwind;
     this.isHelpingHand = !!side.isHelpingHand;
+    this.isFlowerGift = !!side.isFlowerGift;
+    this.isPowerTrick = !!side.isPowerTrick;
     this.isFriendGuard = !!side.isFriendGuard;
     this.isAuroraVeil = !!side.isAuroraVeil;
     this.isBattery = !!side.isBattery;
     this.isPowerSpot = !!side.isPowerSpot;
+    this.isSteelySpirit = !!side.isSteelySpirit;
     this.isSwitching = side.isSwitching;
   }
 
