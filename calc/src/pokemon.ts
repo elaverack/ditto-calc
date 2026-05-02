@@ -1,7 +1,7 @@
-import * as I from './data/interface';
+import type * as I from './data/interface';
 import {Stats} from './stats';
 import {toID, extend, assignWithout} from './util';
-import {State} from './state';
+import type {State} from './state';
 
 const STATS = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'] as I.StatID[];
 const SPC = new Set(['spc']);
@@ -20,7 +20,12 @@ export class Pokemon implements State.Pokemon {
   ability?: I.AbilityName;
   abilityOn?: boolean;
   isDynamaxed?: boolean;
+  dynamaxLevel?: number;
+  alliesFainted?: number;
+  boostedStat?: I.StatIDExceptHP | 'auto';
   item?: I.ItemName;
+  disabledItem?: I.ItemName;
+  teraType?: I.TypeName;
 
   nature: I.NatureName;
   ivs: I.StatsTable;
@@ -50,26 +55,32 @@ export class Pokemon implements State.Pokemon {
     this.gen = gen;
     this.name = options.name || name as I.SpeciesName;
     this.types = this.species.types;
-    this.isDynamaxed = !!options.isDynamaxed;
     this.weightkg = this.species.weightkg;
+
+    this.level = gen.num === 0 ? 50 : options.level || 100;
+    this.gender = options.gender || this.species.gender || 'M';
+    this.ability = options.ability || this.species.abilities?.[0] || undefined;
+    this.abilityOn = !!options.abilityOn;
+
+    this.isDynamaxed = !!options.isDynamaxed;
+    this.dynamaxLevel = this.isDynamaxed
+      ? (options.dynamaxLevel === undefined ? 10 : options.dynamaxLevel) : undefined;
+    this.alliesFainted = options.alliesFainted;
+    this.boostedStat = options.boostedStat;
+    this.teraType = options.teraType;
+    this.item = options.item;
+    this.nature = options.nature || ('Serious' as I.NatureName);
+    this.ivs = Pokemon.withDefault(gen, gen.num === 0 ? {} : options.ivs, 31);
+    this.evs = Pokemon.withDefault(gen, options.evs, gen.num === 0 || gen.num >= 3 ? 0 : 252);
+    this.boosts = Pokemon.withDefault(gen, options.boosts, 0, false);
+
     // Gigantamax 'forms' inherit weight from their base species when not dynamaxed
     // TODO: clean this up with proper Gigantamax support
     if (this.weightkg === 0 && !this.isDynamaxed && this.species.baseSpecies) {
       this.weightkg = gen.species.get(toID(this.species.baseSpecies))!.weightkg;
     }
 
-    this.level = options.level || 100;
-    this.gender = options.gender || this.species.gender || 'M';
-    this.ability = options.ability || this.species.abilities?.[0] || undefined;
-    this.abilityOn = !!options.abilityOn;
-
-    this.item = options.item;
-    this.nature = options.nature || ('Serious' as I.NatureName);
-    this.ivs = Pokemon.withDefault(gen, options.ivs, 31);
-    this.evs = Pokemon.withDefault(gen, options.evs, gen.num >= 3 ? 0 : 252);
-    this.boosts = Pokemon.withDefault(gen, options.boosts, 0, false);
-
-    if (gen.num < 3) {
+    if (gen.num > 0 && gen.num < 3) {
       this.ivs.hp = Stats.DVToIV(
         Stats.getHPDV({
           atk: this.ivs.atk,
@@ -97,16 +108,20 @@ export class Pokemon implements State.Pokemon {
 
   maxHP(original = false) {
     // Shedinja still has 1 max HP during the effect even if its Dynamax Level is maxed (DaWoblefet)
-    return !original && this.isDynamaxed && this.species.baseStats.hp !== 1
-      ? this.rawStats.hp * 2
-      : this.rawStats.hp;
+    if (!original && this.isDynamaxed && this.species.baseStats.hp !== 1) {
+      return Math.floor((this.rawStats.hp * (150 + 5 * this.dynamaxLevel!)) / 100);
+    }
+
+    return this.rawStats.hp;
   }
 
   curHP(original = false) {
     // Shedinja still has 1 max HP during the effect even if its Dynamax Level is maxed (DaWoblefet)
-    return !original && this.isDynamaxed && this.species.baseStats.hp !== 1
-      ? this.originalCurHP * 2
-      : this.originalCurHP;
+    if (!original && this.isDynamaxed && this.species.baseStats.hp !== 1) {
+      return Math.ceil((this.originalCurHP * (150 + 5 * this.dynamaxLevel!)) / 100);
+    }
+
+    return this.originalCurHP;
   }
 
   hasAbility(...abilities: string[]) {
@@ -123,6 +138,17 @@ export class Pokemon implements State.Pokemon {
 
   hasType(...types: I.TypeName[]) {
     for (const type of types) {
+      if (this.teraType && this.teraType !== 'Stellar'
+        ? this.teraType === type : this.types.includes(type)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Ignores Tera type */
+  hasOriginalType(...types: I.TypeName[]) {
+    for (const type of types) {
       if (this.types.includes(type)) return true;
     }
     return false;
@@ -138,6 +164,9 @@ export class Pokemon implements State.Pokemon {
       ability: this.ability,
       abilityOn: this.abilityOn,
       isDynamaxed: this.isDynamaxed,
+      dynamaxLevel: this.dynamaxLevel,
+      alliesFainted: this.alliesFainted,
+      boostedStat: this.boostedStat,
       item: this.item,
       gender: this.gender,
       nature: this.nature,
@@ -146,6 +175,7 @@ export class Pokemon implements State.Pokemon {
       boosts: extend(true, {}, this.boosts),
       originalCurHP: this.originalCurHP,
       status: this.status,
+      teraType: this.teraType,
       toxicCounter: this.toxicCounter,
       moves: this.moves.slice(),
       overrides: this.species,
@@ -171,7 +201,7 @@ export class Pokemon implements State.Pokemon {
     moveName?: I.MoveName
   ) {
     const species = gen.species.get(toID(speciesName));
-    if (!species || !species.otherFormes) {
+    if (!species?.otherFormes) {
       return speciesName;
     }
 
@@ -205,8 +235,8 @@ export class Pokemon implements State.Pokemon {
         cur.spa = current.spc;
         cur.spd = current.spc;
       }
-      if (match && gen.num <= 2 && current.spa !== current.spd) {
-        throw new Error('Special Attack and Special Defense must match before Gen 3');
+      if (match && gen.num > 0 && gen.num <= 2 && current.spa !== current.spd) {
+        throw new Error('Special Attack and Special Defense must match in Gen 1 and Gen 2');
       }
     }
     return {hp: val, atk: val, def: val, spa: val, spd: val, spe: val, ...cur};

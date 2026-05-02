@@ -4,6 +4,10 @@
 name: Tests
 
 on:
+  workflow_run:
+    workflows: [Update Sets]
+    types: [completed]
+  workflow_dispatch:
   push:
     branches: [ master ]
   pull_request:
@@ -16,10 +20,10 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x]
+        node-version: [18.x]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
       uses: Zarel/setup-node@patch-1
       with:
@@ -28,3 +32,30 @@ jobs:
     - run: npm run test
       env:
         CI: true
+
+  publish:
+    if: ${{ github.repository == 'smogon/damage-calc' && (github.event_name == 'push' || github.event.workflow_run.conclusion == 'success') }}
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+    - uses: actions/checkout@v4
+    - run: npm install
+    - name: Build
+      run: node build
+    - name: Upload artifact for GitHub Pages
+      uses: actions/upload-pages-artifact@v3
+      with:
+        # Upload entire repository
+        path: 'dist'
+    - uses: actions/configure-pages@v5
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

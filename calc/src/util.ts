@@ -1,8 +1,12 @@
 /* eslint-disable eqeqeq, @typescript-eslint/unbound-method, @typescript-eslint/ban-types */
-import {ID} from './data/interface';
+import type {ID} from './data/interface';
 
 export function toID(text: any): ID {
-  return ('' + text).toLowerCase().replace(/[^a-z0-9]+/g, '') as ID;
+  const lcase = ('' + text).toLowerCase();
+  if (lcase === 'flabébé') {
+    return 'flabebe' as ID;
+  }
+  return lcase.replace(/[^a-z0-9]+/g, '') as ID;
 }
 
 export function error(err: boolean, msg: string) {
@@ -117,6 +121,7 @@ export function extend(this: any, ...args: any[]) {
   }
 
   if (length === i) {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     target = this;
     --i;
   }

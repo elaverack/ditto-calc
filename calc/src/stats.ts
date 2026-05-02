@@ -1,4 +1,4 @@
-import {Natures, Generation, TypeName, StatID, StatsTable} from './data/interface';
+import type {Natures, Generation, TypeName, StatID, StatsTable} from './data/interface';
 import {toID} from './util';
 
 const RBY: Array<StatID | 'spc'> = ['hp', 'atk', 'def', 'spc', 'spe'];
@@ -9,11 +9,12 @@ const BW: StatID[] = GSC;
 const XY: StatID[] = GSC;
 const SM: StatID[] = GSC;
 const SS: StatID[] = GSC;
+const SV: StatID[] = GSC;
 
 export const STATS: Array<Array<StatID | 'spc'> | StatID[]> =
-  [[], RBY, GSC, ADV, DPP, BW, XY, SM, SS];
+  [[], RBY, GSC, ADV, DPP, BW, XY, SM, SS, SV];
 
-type HPTypeName = Exclude<TypeName, 'Normal' | 'Fairy' | '???'>;
+type HPTypeName = Exclude<TypeName, 'Normal' | 'Fairy' | 'Stellar' | '???'>;
 
 const HP_TYPES = [
   'Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost', 'Steel',
@@ -115,9 +116,38 @@ export const Stats = new (class {
     level: number,
     nature?: string
   ) {
-    if (gen.num < 1 || gen.num > 8) throw new Error(`Invalid generation ${gen.num}`);
+    if (gen.num < 0 || gen.num > 9) throw new Error(`Invalid generation ${gen.num}`);
+    if (gen.num === 0) return this.calcStatChampions(gen.natures, stat, base, ev, nature);
     if (gen.num < 3) return this.calcStatRBY(stat, base, iv, level);
     return this.calcStatADV(gen.natures, stat, base, iv, ev, level, nature);
+  }
+
+  calcStatChampions(
+    natures: Natures,
+    stat: StatID,
+    base: number,
+    sp: number,
+    nature?: string
+  ) {
+    if (stat === 'hp') {
+      return base === 1
+        ? base
+        : base + sp + 75;
+    }
+    let mods: [StatID?, StatID?] = [undefined, undefined];
+    if (nature) {
+      const nat = natures.get(toID(nature));
+      mods = [nat?.plus, nat?.minus];
+    }
+    const n =
+        mods[0] === stat && mods[1] === stat
+          ? 1
+          : mods[0] === stat
+            ? 1.1
+            : mods[1] === stat
+              ? 0.9
+              : 1;
+    return Math.floor(n * (base + sp + 20));
   }
 
   calcStatADV(

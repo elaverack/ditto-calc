@@ -1,8 +1,8 @@
 /* eslint-env jest */
 
-import * as I from '../data/interface';
-import {calculate, Pokemon, Move, Result} from '../index';
-import {State} from '../state';
+import type * as I from '../data/interface';
+import {type Result, calculate, Pokemon, Move} from '../index';
+import type {State} from '../state';
 import {Field, Side} from '../field';
 
 const calc = (gen: I.GenerationNum) => (
@@ -59,9 +59,25 @@ export function inGen(gen: I.GenerationNum, fn: (gen: Gen) => void) {
   });
 }
 
-export function inGens(from: I.GenerationNum, to: I.GenerationNum, fn: (gen: Gen) => void) {
-  for (let gen = from; gen <= to; gen++) {
-    inGen(gen, fn);
+export function inGens(
+  gens: [I.GenerationNum, I.GenerationNum] |
+  (I.GenerationNum | [I.GenerationNum, I.GenerationNum])[],
+  fn: (gen: Gen) => void
+) {
+  if (typeof gens[0] === 'number' && typeof gens[1] === 'number') {
+    for (let gen = gens[0]; gen <= gens[1]; gen++) {
+      inGen(gen, fn);
+    }
+    return;
+  }
+  for (const target of gens) {
+    if (Array.isArray(target)) {
+      for (let gen = target[0]; gen <= target[1]; gen++) {
+        inGen(gen, fn);
+      }
+    } else {
+      inGen(target, fn);
+    }
   }
 }
 
@@ -87,12 +103,12 @@ export function tests(...args: any[]) {
   let type: 'skip' | 'only' | undefined = undefined;
   if (typeof args[1] !== 'number') {
     from = 1;
-    to = 8;
+    to = 9;
     fn = args[1];
     type = args[2];
   } else if (typeof args[2] !== 'number') {
     from = args[1] as I.GenerationNum ?? 1;
-    to = 8;
+    to = 9;
     fn = args[2];
     type = args[3];
   } else {
@@ -102,7 +118,7 @@ export function tests(...args: any[]) {
     type = args[4];
   }
 
-  inGens(from, to, gen => {
+  inGens([from, to], gen => {
     const n = `${name} (gen ${gen.gen})`;
     if (type === 'skip') {
       test.skip(n, () => fn!(gen));

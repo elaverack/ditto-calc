@@ -1,6 +1,6 @@
 export interface As<T> {__brand: T}
 export type ID = (string & As<'ID'>) | (string & { __isID: true }) | '';
-export type GenerationNum = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+export type GenerationNum = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 export type GenderName = 'M' | 'F' | 'N';
 export type StatID = 'hp' | StatIDExceptHP;
 export type StatIDExceptHP = 'atk' | 'def' | 'spa' | 'spd' | 'spe';
@@ -16,7 +16,7 @@ export type StatusName = 'slp' | 'psn' | 'brn' | 'frz' | 'par' | 'tox';
 export type GameType = 'Singles' | 'Doubles';
 export type Terrain = 'Electric' | 'Grassy' | 'Psychic' | 'Misty';
 export type Weather =
-  | 'Sand' | 'Sun' | 'Rain' | 'Hail' | 'Harsh Sunshine' | 'Heavy Rain' | 'Strong Winds';
+  | 'Sand' | 'Sun' | 'Rain' | 'Hail' | 'Snow' | 'Harsh Sunshine' | 'Heavy Rain' | 'Strong Winds';
 
 export type NatureName =
   'Adamant' | 'Bashful' | 'Bold' | 'Brave' | 'Calm' |
@@ -27,7 +27,8 @@ export type NatureName =
 
 export type TypeName =
   'Normal' | 'Fighting' | 'Flying' | 'Poison' | 'Ground' | 'Rock' | 'Bug' | 'Ghost' | 'Steel' |
-  'Fire' | 'Water' | 'Grass' | 'Electric' | 'Psychic' | 'Ice' | 'Dragon' | 'Dark' | 'Fairy' | '???';
+  'Fire' | 'Water' | 'Grass' | 'Electric' | 'Psychic' | 'Ice' | 'Dragon' | 'Dark' | 'Fairy' |
+  'Stellar' | '???';
 
 export type MoveCategory = 'Physical' | 'Special' | 'Status';
 
@@ -74,7 +75,7 @@ export interface Items {
 
 export interface Item extends Data<ItemName> {
   readonly kind: 'Item';
-  readonly megaEvolves?: SpeciesName;
+  readonly megaStone?: Readonly<{[megaEvolves: SpeciesName]: SpeciesName}>;
   readonly isBerry?: boolean;
   readonly naturalGift?: Readonly<{basePower: number; type: TypeName}>;
 }
@@ -92,6 +93,8 @@ export interface MoveFlags {
   punch?: 1 | 0;
   bullet?: 1 | 0;
   pulse?: 1 | 0;
+  slicing?: 1 | 0;
+  wind?: 1| 0;
 }
 
 export interface SelfOrSecondaryEffect {
@@ -129,6 +132,7 @@ export interface Move extends Data<MoveName> {
     basePower: number;
   };
   readonly multihit?: number | number[];
+  readonly multiaccuracy?: boolean;
 }
 
 export interface Species {
@@ -141,11 +145,11 @@ export interface Specie extends Data<SpeciesName> {
   readonly types: [TypeName] | [TypeName, TypeName];
   readonly baseStats: Readonly<StatsTable>;
   readonly weightkg: number;
-  readonly nfe?: boolean;
   readonly gender?: GenderName;
+  readonly nfe?: boolean;
+  readonly abilities?: {0: AbilityName | ''};
   readonly otherFormes?: SpeciesName[];
   readonly baseSpecies?: SpeciesName;
-  readonly abilities?: {0: AbilityName | ''};
 }
 
 export interface Types {
