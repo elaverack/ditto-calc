@@ -22,7 +22,7 @@ Bulk is **not** a simple calculation like HP × Defense. It is a scaled value in
 
 2. **Attack the Target**
 
-    The attacking Ditto fires two calibration moves: 999 base power, type `???`**, one Special (Thunderbolt-shaped) and one Physical (Body Slam-shaped). Type `???` avoids matchup noise from the move’s nominal typing. Damage against the selected Pokemon using this "standard big hit" is then calculated. An attack with a large damage result is used to minimize rounding errors.
+    The attacking Ditto fires two calibration moves: 999 base power, type `???`, one Special (Thunderbolt-shaped) and one Physical (Body Slam-shaped). Type `???` avoids matchup noise from the move’s nominal typing. Damage against the selected Pokemon using this "standard big hit" is then calculated. An attack with a large damage result is used to minimize rounding errors.
 
 3. **Bulk Ratio**  
 
