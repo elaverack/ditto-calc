@@ -320,6 +320,13 @@ html, body {
     max-width: 1300px;
     margin: 0 auto;
 }
+.ditto-brand {
+    display: block;
+    width: 50px;
+    height: 50px;
+    margin: 0 0 0.35em 0;
+    object-fit: contain;
+}
 .credits {
     clear: both;
     padding: 20px;
@@ -522,6 +529,14 @@ th {
     font-size: 0.8em;
     font-weight: bold;
     margin: 0 0 5px;
+}
+
+.bulk-stat-field {
+    display: inline-block;
+    vertical-align: middle;
+    width: 12em;
+    max-width: calc(100% - 11em);
+    box-sizing: border-box;
 }
 
 /* pokemon info */

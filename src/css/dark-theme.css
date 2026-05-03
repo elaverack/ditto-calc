@@ -15,8 +15,19 @@
 
 html, body {
     color: var(--text);
-    background-color: var(--background);
     color-scheme: dark;
+    /* Full background stack so we override main.css body gradient when dark theme is on */
+    background-color: #0c0614;
+    background-image: linear-gradient(
+        155deg,
+        #3d2660 0%,
+        #24143c 38%,
+        #12081c 72%,
+        #080410 100%
+    );
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    min-height: 100%;
 }
 a {
     color:#63aed1;
