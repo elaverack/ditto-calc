@@ -52,7 +52,26 @@ function cpdir(src, dest) {
 			// Minify the sets so we save bandwith
 			if (src === 'src/js/data/sets') {
 				const brkOpenIdx = contents.indexOf('{');
-				contents = `${contents.slice(0, brkOpenIdx)}${JSON.stringify(JSON.parse(contents.slice(brkOpenIdx, -2)))};`
+				let depth = 0;
+				let i;
+				for (i = brkOpenIdx; i < contents.length; i++) {
+					const c = contents[i];
+					if (c === '"') {
+						i++;
+						while (i < contents.length && contents[i] !== '"') {
+							if (contents[i] === '\\') i++;
+							i++;
+						}
+						continue;
+					}
+					if (c === '{') depth++;
+					else if (c === '}') {
+						depth--;
+						if (depth === 0) break;
+					}
+				}
+				const jsonStr = contents.slice(brkOpenIdx, i + 1);
+				contents = `${contents.slice(0, brkOpenIdx)}${JSON.stringify(JSON.parse(jsonStr))};`;
 			}
 			fs.writeFileSync(path.join(dest, file), contents);
 		} else {
