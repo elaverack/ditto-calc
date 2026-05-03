@@ -54,7 +54,9 @@
         "loadDefaultLists": false,
         "pokedex": true,
         "createField": false,
-        "createPokemon": false
+        "createPokemon": false,
+        "calculateAllMovesNoBoost": false,
+        "updateChampionsP1Bulk": false
     },
     "extends": "eslint:recommended",
     "rules": {

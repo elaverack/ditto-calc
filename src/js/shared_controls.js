@@ -590,8 +590,58 @@ function smogonAnalysis(pokemonName) {
 	return "https://smogon.com/dex/" + generation + "/pokemon/" + pokemonName.toLowerCase() + "/";
 }
 
+/** Ditto-calc: P2 is always Ditto (Blank Set). */
+function getP2DittoSetSelectorValue() {
+	return "Ditto (Blank Set)";
+}
+
+function initP1P2SetSelectors() {
+	var first = getFirstValidSetOption();
+	var dittoId = getP2DittoSetSelectorValue();
+	if (first && first.id) {
+		$("#p1 .set-selector").val(first.id).change();
+	}
+	if (dittoId) {
+		$("#p2 .set-selector").val(dittoId).change();
+	}
+	lockP2Panel();
+}
+
+/** Lock defender panel: typeless Ditto blank set only, no edits. */
+function lockP2Panel() {
+	var $p2 = $("#p2");
+	if (!$p2.length) return;
+	$p2.addClass("poke-info-locked");
+	$p2.find("input, select, textarea, button").prop("disabled", true);
+	$p2.find(".set-selector").each(function () {
+		var $el = $(this);
+		try {
+			if ($el.data("select2")) {
+				$el.select2("disable");
+			}
+		} catch (e) { /* select2 not inited */ }
+	});
+	$p2.find(".move-selector").each(function () {
+		var $el = $(this);
+		try {
+			if ($el.data("select2")) {
+				$el.select2("disable");
+			}
+		} catch (e) { /* */ }
+	});
+}
+
 // auto-update set details on select
 $(".set-selector").change(function () {
+	var pokeObjEarly = $(this).closest(".poke-info");
+	if (pokeObjEarly.prop("id") === "p2") {
+		var want = getP2DittoSetSelectorValue();
+		var curSel = $(this).val() || "";
+		if (curSel !== want) {
+			$(this).val(want).trigger("change");
+			return;
+		}
+	}
 	var fullSetName = $(this).val();
 	var pokemonName = fullSetName.substring(0, fullSetName.indexOf(" ("));
 	var setName = fullSetName.substring(fullSetName.indexOf("(") + 1, fullSetName.lastIndexOf(")"));
@@ -791,6 +841,10 @@ $(".set-selector").change(function () {
 			pokeObj,
 			(regSets || randset) && set.gender ? set.gender : undefined
 		);
+		if (pokeObj.prop("id") === "p2") {
+			pokeObj.find(".type1").val("???");
+			pokeObj.find(".type2").val("");
+		}
 		$(".ability").each(function () {
 			if (checkRivalry($(this).val())) return; // stop after any Rivalry is found, no need to look further
 		});
@@ -1117,6 +1171,21 @@ function createPokemon(pokeInfo) {
 		}
 		if (gen === 1) baseStats.spd = baseStats.spa;
 
+		// Ditto-calc: defender is always typeless Ditto for damage (UI unchanged).
+		if (pokeInfo.prop("id") === "p2") {
+			name = "Ditto";
+			var genObj = GENERATION && GENERATION.species ? GENERATION : calc.Generations.get(gen);
+			var dittoSpec = genObj.species.get(calc.toID("Ditto"));
+			if (dittoSpec) {
+				baseStats.hp = dittoSpec.baseStats.hp;
+				baseStats.atk = dittoSpec.baseStats.atk;
+				baseStats.def = dittoSpec.baseStats.def;
+				baseStats.spa = dittoSpec.baseStats.spa;
+				baseStats.spd = dittoSpec.baseStats.spd;
+				baseStats.spe = dittoSpec.baseStats.spe;
+			}
+		}
+
 		var ability = pokeInfo.find(".ability").val();
 		var item = pokeInfo.find(".item").val();
 		var gender = pokeInfo.find(".gender").val();
@@ -1135,7 +1204,9 @@ function createPokemon(pokeInfo) {
 		var curHP = ~~pokeInfo.find(".current-hp").val();
 		// FIXME the Pokemon constructor expects non-dynamaxed HP
 		if (isDynamaxed) curHP = Math.floor(curHP / 2);
-		var types = [pokeInfo.find(".type1").val(), pokeInfo.find(".type2").val()];
+		var types = pokeInfo.prop("id") === "p2"
+			? ["???"]
+			: [pokeInfo.find(".type1").val(), pokeInfo.find(".type2").val()];
 		return new calc.Pokemon(gen, name, {
 			level: ~~pokeInfo.find(".level").val(),
 			ability: ability,
@@ -1517,8 +1588,7 @@ $(".gen").change(function () {
 	var itemOptions = getSelectOptions(items, true);
 	$("select.item").find("option").remove().end().append("<option value=\"\">(none)</option>" + itemOptions);
 
-	$(".set-selector").val(getFirstValidSetOption().id);
-	$(".set-selector").change();
+	initP1P2SetSelectors();
 });
 
 function getFirstValidSetOption() {
@@ -1530,12 +1600,25 @@ function getFirstValidSetOption() {
 	return undefined;
 }
 
+/**
+ * Same shape as Result#moveDesc but the damage span is raw HP (min-max rolls), not % or 48ths.
+ * Recovery/recoil parentheticals still follow the active notation (see global `notation`).
+ * @param {*} result calc Result instance
+ * @param {string} [recoveryNotation] defaults to global `notation`
+ * @returns {string}
+ */
+function moveDescHP(result) {
+	var r = result.range();
+	var s = r[0] + ' - ' + r[1];
+	return s;
+}
+
 $(".notation").change(function () {
 	notation = $(this).val();
 });
 
 function clearField() {
-	$("#singles-format").prop("checked", true);
+	$("#doubles-format").prop("checked", true);
 	$("#clear").prop("checked", true);
 	$("#gscClear").prop("checked", true);
 	$("#magicroom").prop("checked", false);
@@ -1631,28 +1714,26 @@ function getSetOptions(sets) {
 					});
 				}
 			}
-		} else {
-			if (pokeName in setdex) {
-				var setNames = Object.keys(setdex[pokeName]);
-				for (var j = 0; j < setNames.length; j++) {
-					var setName = setNames[j];
-					setOptions.push({
-						pokemon: pokeName,
-						set: setName,
-						text: pokeName + " (" + setName + ")",
-						id: pokeName + " (" + setName + ")",
-						isCustom: setdex[pokeName][setName].isCustomSet,
-						nickname: setdex[pokeName][setName].nickname || ""
-					});
-				}
+		} else if (pokeName in setdex) {
+			var setNames = Object.keys(setdex[pokeName]);
+			for (var j = 0; j < setNames.length; j++) {
+				var setName = setNames[j];
+				setOptions.push({
+					pokemon: pokeName,
+					set: setName,
+					text: pokeName + " (" + setName + ")",
+					id: pokeName + " (" + setName + ")",
+					isCustom: setdex[pokeName][setName].isCustomSet,
+					nickname: setdex[pokeName][setName].nickname || ""
+				});
 			}
-			setOptions.push({
-				pokemon: pokeName,
-				set: "Blank Set",
-				text: pokeName + " (Blank Set)",
-				id: pokeName + " (Blank Set)"
-			});
 		}
+		setOptions.push({
+			pokemon: pokeName,
+			set: "Blank Set",
+			text: pokeName + " (Blank Set)",
+			id: pokeName + " (Blank Set)"
+		});
 	}
 	return setOptions;
 }
@@ -1893,15 +1974,14 @@ $(document).ready(function () {
 		var itemOptions = getSelectOptions(items, true);
 		$("select.item").find("option").remove().end().append("<option value=\"\">(none)</option>" + itemOptions);
 
-		$(".set-selector").val(getFirstValidSetOption().id);
-		$(".set-selector").change();
+		initP1P2SetSelectors();
 	}
 	$("#gen" + g).prop("checked", true);
 	$("#gen" + g).change();
 	$("#percentage").prop("checked", true);
 	$("#percentage").change();
-	$("#singles-format").prop("checked", true);
-	$("#singles-format").change();
+	$("#doubles-format").prop("checked", true);
+	$("#doubles-format").change();
 	$("#default-level-100").prop("checked", true);
 	$("#default-level-100").change();
 	loadDefaultLists();
@@ -1912,8 +1992,7 @@ $(document).ready(function () {
 			return text.toUpperCase().indexOf(term.toUpperCase()) === 0 || text.toUpperCase().indexOf(" " + term.toUpperCase()) >= 0;
 		}
 	});
-	$(".set-selector").val(getFirstValidSetOption().id);
-	$(".set-selector").change();
+	initP1P2SetSelectors();
 	$(".terrain-trigger").bind("change keyup", getTerrainEffects);
 });
 

@@ -54,7 +54,7 @@ function performCalculations() {
 			return secondMove.maxDamage - firstMove.maxDamage;
 		});
 		$(resultLocations[0][i].move + " + label").text(p1.moves[i].name.replace("Hidden Power", "HP"));
-		$(resultLocations[0][i].damage).text(result.moveDesc(notation));
+		$(resultLocations[0][i].damage).text(moveDescHP(result));
 
 		// P2
 		result = damageResults[1][i];
@@ -68,11 +68,14 @@ function performCalculations() {
 			return secondMove.maxDamage - firstMove.maxDamage;
 		});
 		$(resultLocations[1][i].move + " + label").text(p2.moves[i].name.replace("Hidden Power", "HP"));
-		$(resultLocations[1][i].damage).text(result.moveDesc(notation));
+		$(resultLocations[1][i].damage).text(moveDescHP(result));
 
 		// BOTH
 		var bestMove;
-		if (fastestSide === "tie") {
+		if ($("#champions").prop("checked")) {
+			bestMove = p1.maxDamages[0].moveOrder;
+			bestResult = $(resultLocations[0][bestMove].move);
+		} else if (fastestSide === "tie") {
 			// Technically the order should be random in a speed tie, but this non-determinism makes manual testing more difficult.
 			// battling.sort(function () { return 0.5 - Math.random(); });
 			bestMove = battling[0].maxDamages[0].moveOrder;
@@ -91,7 +94,12 @@ function performCalculations() {
 	bestResult.prop("checked", true);
 	bestResult.change();
 	$("#resultHeaderL").text(p1.name + "'s Moves (select one to show detailed results)");
-	$("#resultHeaderR").text(p2.name + "'s Moves (select one to show detailed results)");
+	if ($("#resultHeaderR").length) {
+		$("#resultHeaderR").text(p2.name + "'s Moves (select one to show detailed results)");
+	}
+	if ($("#champions").prop("checked") && $("#p1BulkPhys").length) {
+		updateChampionsP1Bulk(gen, p1, p2, p1field, p2field);
+	}
 }
 
 $(".result-move").change(function () {
@@ -185,14 +193,18 @@ function checkStatBoost(p1, p2) {
 	}
 }
 
-function calculateAllMoves(gen, p1, p1field, p2, p2field) {
-	checkStatBoost(p1, p2);
+function calculateAllMovesNoBoost(gen, p1, p1field, p2, p2field) {
 	var results = [[], []];
 	for (var i = 0; i < 4; i++) {
 		results[0][i] = calc.calculate(gen, p1, p2, p1.moves[i], p1field);
 		results[1][i] = calc.calculate(gen, p2, p1, p2.moves[i], p2field);
 	}
 	return results;
+}
+
+function calculateAllMoves(gen, p1, p1field, p2, p2field) {
+	checkStatBoost(p1, p2);
+	return calculateAllMovesNoBoost(gen, p1, p1field, p2, p2field);
 }
 
 $(".mode").change(function () {
