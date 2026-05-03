@@ -40,11 +40,11 @@ Bulk is **not** a simple calculation like HP × Defense. It is a scaled value in
 
 5. **Profit**
 
-    We now have an independent measure of any Pokemon's physical and special bulk measured in DittoHP units. As a result, any damage amounts from other Pokemon to our standard Ditto are on the same scale, so damage calculations are a subtraction or division of the Ditto-Damage from the DittoHP-Bulk of any Pokemon.
+    We now have an independent measure of any Pokemon's physical and special bulk measured in DittoHP units. As a result, any damage amounts from other Pokemon to our standard Ditto are on the same scale, so damage calculations are a subtraction or division of the Ditto-Damage from the Ditto-Bulk of any Pokemon.
 
-    Example:
+    Example 1:
 
-    0 Def Aggron-Mega Body Press vs. 2 HP / 0 Def Incineroar: 138-164 (80.2 - 95.3%) -- guaranteed 2HKO
+    0 Def Aggron-Mega Body Press vs. 2 HP / 0 Def Incineroar: 138-164 (80.2 - 95.3%)
 
     0 Def Aggron-Mega Body Press vs. 0 HP / 0 Def Ditto: 111-131
 
@@ -54,7 +54,21 @@ Bulk is **not** a simple calculation like HP × Defense. It is a scaled value in
 
     (222-262)/277 = (80.1% - 94.5%)
 
-    Rounding errors account for the difference between the raw calc and the Ditto-Normalized derivation.
+    Example 2:
+
+    32+ Atk Aerodactyl Dual Wingbeat (2 hits) vs. 32 HP / 32 Def Sneasler: 144-172 (77 - 91.9%) -- guaranteed 2HKO
+
+    32+ Atk Aerodactyl Dual Wingbeat (2 hits) vs. 0 HP / 0 Def Ditto: 116-138
+
+    32 HP / 32 Def Sneasler Physical Bulk: 308
+
+    (116 - 138)/308 * 2 = (75.3 - 89.6%)
+
+    Rounding accounts for the difference between the raw calc and the DittoCalc derivation, but the goal is not to replicate exact damage calculations, but give players a knowledge base that allows key damage thresholds to be discovered by intuition. Unfamiliar matchups also become more navigable once absolute bulk and damage are calculated.
+
+    
+
+
 
 Upstream credits remain with the original Smogon calculator; DittoCalc-specific changes are layered on top.
 
