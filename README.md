@@ -66,7 +66,9 @@ Bulk is **not** a simple calculation like HP × Defense. It is a scaled value in
 
     Rounding accounts for the difference between the raw calc and the DittoCalc derivation, but the goal is not to replicate exact damage calculations, but give players a knowledge base that allows key damage thresholds to be discovered by intuition. Unfamiliar matchups also become more navigable once absolute bulk and damage are calculated.
 
-    
+## Goals and Future Plans
+
+    My ultimate goal with publishing this calculator is to encourage the adoption of a standard damage and bulk metric in compentitive Pokemon, which I believe would reduce the barrier to entry for new players, accelerate the development of the metagame, and increase the consistency of high level players. I unfortunately am not able to dedicate the time needed to develop this calculator to the level of usefulness provided by dedicated teams like those at Pikalytics and Smogon. If you find this tool helpful, please request that the concept be integrated into those platforms.
 
 
 
