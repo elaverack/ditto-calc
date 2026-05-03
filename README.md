@@ -41,8 +41,11 @@ Bulk is **not** a simple calculation like HP × Defense. It is a scaled value in
     0 Def Aggron-Mega Body Press vs. 2 HP / 0 Def Incineroar: 138-164 (80.2 - 95.3%) -- guaranteed 2HKO
 
     0 Def Aggron-Mega Body Press vs. 0 HP / 0 Def Ditto: 111-131
+
     2 HP / 0 Def Incineroar Physical Bulk: 277
+
     (111-131) x 2 =  (222-262) Fighting vs. Dark Supereffective
+    
     (222-262)/277 = (80.1% - 94.5%)
 
     Rounding errors account for the difference between the raw calc and the Ditto-Normalized derivation.
