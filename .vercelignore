@@ -1,3 +1,0 @@
-# Root server is for local/Docker only. If Vercel treats it as the Node entrypoint,
-# dist/ is not bundled into the serverless function → "Cannot GET /".
-server.js

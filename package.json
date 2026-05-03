@@ -4,7 +4,7 @@
   "repository": "github:smogon/damage-calc",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.22.1"
+    "serve": "^14.2.4"
   },
   "devDependencies": {
     "eslint": "^8.57.0",
@@ -34,7 +34,7 @@
     "terser": "^5.16.5"
   },
   "scripts": {
-    "start": "node server.js",
+    "start": "serve -s dist -l 3000",
     "lint": "subpkg run lint && eslint --cache src --ext js",
     "fix": "subpkg run fix && eslint --fix src --ext js",
     "compile": "subpkg run compile && node build view",
