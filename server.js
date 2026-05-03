@@ -1,5 +1,7 @@
+const path = require("path");
 const express = require("express");
-const calc = require("calc");
+// Monorepo calc (not published as npm "calc"); subpkg only runs locally — use dist for Vercel etc.
+const calc = require(path.join(__dirname, "calc", "dist", "index.js"));
 const app = express();
 app.listen(3000, () => {
 	console.log("Server running on port 3000");
