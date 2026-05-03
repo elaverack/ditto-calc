@@ -8,6 +8,8 @@ In standard one-vs-one calcs you pick both the attacker and the defender and loo
 
 DittoCalc fixes the defender as a **typeless untrained Ditto** so damage numbers are on the same scale no matter the Pokemon, move, or spread.  **Physical Bulk** and **Special Bulk** are derived as single numbers from standardized hits everyone is measured against. It removes the difficulty in comparing the defensive capabilities between Pokemon with wildly different HP, SpDef, and Def stats.
 
+The physical and special bulk values are tuned to be equivalent to Ditto HP, so damage calculations become a subtraction of one Pokemon's damage output in DittoHP (DittoDamage) from another's bulk, also in Ditto HP. Type matchups and additional factors must be accounted for by the player.
+
 ## How bulk calculation works
 
 Bulk is **not** a simple calculation like HP × Defense. It is a scaled value in **“Ditto HP units”**. The logic for its calculation is as follows.
