@@ -1452,7 +1452,7 @@ var GENERATION = {
 };
 
 var SETDEX = [
-	typeof SETDEX_CHAMPIONS === 'undefined' ? {} : SETDEX_CHAMPIONS,
+	typeof SETDEX_PIKALYTICS !== 'undefined' ? SETDEX_PIKALYTICS : (typeof SETDEX_CHAMPIONS === 'undefined' ? {} : SETDEX_CHAMPIONS),
 	typeof SETDEX_RBY === 'undefined' ? {} : SETDEX_RBY,
 	typeof SETDEX_GSC === 'undefined' ? {} : SETDEX_GSC,
 	typeof SETDEX_ADV === 'undefined' ? {} : SETDEX_ADV,

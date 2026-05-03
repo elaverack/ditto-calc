@@ -24,6 +24,7 @@
         "startsWith": false,
         "notation": true,
         "SETDEX_CHAMPIONS": false,
+        "SETDEX_PIKALYTICS": false,
         "SETDEX_SV": false,
         "SETDEX_SS": false,
         "SETDEX_SM": false,
