@@ -725,21 +725,28 @@ $(".set-selector").change(function () {
 			}
 			pokeObj.find(".level").val(set.level === undefined ? 100 : set.level);
 			for (i = 0; i < LEGACY_STATS[gen].length; i++) {
-				var stat = $("#randoms").prop("checked") ? legacyStatToStat(LEGACY_STATS[gen][i]) : LEGACY_STATS[gen][i];
-				if ($("#champions").prop("checked") && !set.sps) {
-					var sps = set.evs && set.evs[stat] !== undefined ? set.evs[stat] : 0;
-					if (sps === 4) sps = 1;
-					else sps = Math.ceil(sps / 8);
-					pokeObj.find("." + LEGACY_STATS[gen][i] + " .sps").val(sps);
+				var legacyStat = LEGACY_STATS[gen][i];
+				var stat = $("#randoms").prop("checked") ? legacyStatToStat(legacyStat) : legacyStat;
+				var modStat = legacyStatToStat(legacyStat);
+				if ($("#champions").prop("checked")) {
+					if (set.statPoints) {
+						pokeObj.find("." + legacyStat + " .sps").val(
+							set.statPoints[modStat] !== undefined ? set.statPoints[modStat] : 0);
+					} else if (!set.sps) {
+						var sps = set.evs && set.evs[stat] !== undefined ? set.evs[stat] : 0;
+						if (sps === 4) sps = 1;
+						else sps = Math.ceil(sps / 8);
+						pokeObj.find("." + legacyStat + " .sps").val(sps);
+					}
 				}
-				pokeObj.find("." + LEGACY_STATS[gen][i] + " .evs").val(
+				pokeObj.find("." + legacyStat + " .evs").val(
 					(set.evs && set.evs[stat] !== undefined) ? set.evs[stat] : ($("#randoms").prop("checked") ? 84 : 0));
-				pokeObj.find("." + LEGACY_STATS[gen][i] + " .ivs").val(
+				pokeObj.find("." + legacyStat + " .ivs").val(
 					(set.ivs && set.ivs[stat] !== undefined) ? set.ivs[stat] : 31);
-				pokeObj.find("." + LEGACY_STATS[gen][i] + " .dvs").val(
+				pokeObj.find("." + legacyStat + " .dvs").val(
 					(set.dvs && set.dvs[stat] !== undefined) ? set.dvs[stat] : 15);
 				if (set.sps) {
-					pokeObj.find("." + LEGACY_STATS[gen][i] + " .sps").val(set.sps[stat] !== undefined ? set.sps[stat] : 0);
+					pokeObj.find("." + legacyStat + " .sps").val(set.sps[modStat] !== undefined ? set.sps[modStat] : 0);
 				}
 			}
 			setSelectValueIfValid(pokeObj.find(".nature"), set.nature, "Hardy");
@@ -1097,11 +1104,12 @@ function createPokemon(pokeInfo) {
 			var stat = legacyStatToStat(legacyStat);
 
 			ivs[stat] = (gen >= 3 && set.ivs && typeof set.ivs[legacyStat] !== "undefined") ? set.ivs[legacyStat] : 31;
-			var sps = set.sps;
 			if (isChampions) {
 				var sps = 0;
-				if (set.sps) {
-					sps = set.sps[legacyStat] || 0;
+				if (set.statPoints) {
+					sps = set.statPoints[stat] !== undefined ? set.statPoints[stat] : 0;
+				} else if (set.sps) {
+					sps = set.sps[stat] !== undefined ? set.sps[stat] : 0;
 				} else {
 					sps = set.evs && typeof set.evs[legacyStat] !== "undefined" ? set.evs[legacyStat] : 0;
 					if (sps === 4) sps = 1;
